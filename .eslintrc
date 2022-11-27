@@ -1,0 +1,27 @@
+{
+    "root": true,
+    "extends": "eslint:recommended",
+    "rules": {
+        "no-console": 0,
+        "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+        "quotes": ["error", "single"],
+        "semi": ["error", "always"],
+        "semi-spacing": ["error", {"after": true, "before": false}],
+        "semi-style": ["error", "last"],
+        "no-extra-semi": "error",
+        "no-unexpected-multiline": "error",
+        "no-unreachable": "error",
+        "jsdoc/no-undefined-types": 1
+    },
+    "env": {
+        "es2022": true,
+        "browser": true,
+        "node": true
+    },
+    "parserOptions": {
+        "sourceType": "module"
+    },
+    "plugins": [
+        "jsdoc"
+    ]
+}
