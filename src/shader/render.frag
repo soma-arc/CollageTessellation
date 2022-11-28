@@ -14,6 +14,7 @@ uniform Point u_point1;
 uniform Point u_point2;
 uniform Point u_point3;
 uniform float u_scale;
+uniform vec2 u_translate;
 
 const float DISPLAY_GAMMA_COEFF = 1. / 2.2;
 vec4 gammaCorrect(vec4 rgba) {
@@ -35,6 +36,7 @@ void main() {
     float ratio = u_resolution.x / u_resolution.y / 2.0;
     vec2 position = ((gl_FragCoord.xy) / u_resolution.yy ) - vec2(ratio, 0.5);
     position *= u_scale;
+    position += u_translate;
     vec3 col;
     render(position, col);
     

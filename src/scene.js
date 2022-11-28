@@ -7,9 +7,12 @@ export default class Scene {
     /** @type {Array.<Point>} */
     objects = [];
     /** @type {Number} */
-    sceneScale = 10.0;
+    scale = 10.0;
+    /** @type {Vec2} */
+    translate = new Vec2(0, 0);
     /** @type {SelectionState} */
     selectionState = new SelectionState();
+    /** @type {Array.<WebGLUniformLocation>} */
     uniformLocations = [];
     /**
      *
@@ -34,6 +37,7 @@ export default class Scene {
 
         this.uniformLocations = [];
         this.uniformLocations.push(gl.getUniformLocation(program, 'u_scale'));
+        this.uniformLocations.push(gl.getUniformLocation(program, 'u_translate'));
     }
 
     /**
@@ -41,11 +45,12 @@ export default class Scene {
      */
     setUniformValues(gl) {
         for(const obj of this.objects) {
-            obj.setUnifomValues(gl, this.sceneScale);
+            obj.setUnifomValues(gl, this.scale);
         }
 
         let index = 0;
-        gl.uniform1f(this.uniformLocations[index], this.sceneScale);
+        gl.uniform1f(this.uniformLocations[index++], this.scale);
+        gl.uniform2f(this.uniformLocations[index++], this.translate.x, this.translate.y);
     }
 
     /**
@@ -54,7 +59,7 @@ export default class Scene {
      */
     select(mouseState) {
         for(const obj of this.objects) {
-            this.selectionState = obj.select(mouseState, this.sceneScale);
+            this.selectionState = obj.select(mouseState, this.scale);
             if(this.selectionState.isSelectingObj()) return true;
         }
         return false;
