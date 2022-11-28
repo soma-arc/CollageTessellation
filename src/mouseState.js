@@ -4,25 +4,62 @@ export default class MouseState {
     /** @type {Boolean} */
     isPressing = false;
     /** @type {Vec2} */
-    position;
+    position = new Vec2(0, 0);
     /** @type {Vec2} */
-    prevPosition;
+    prevPosition = new Vec2(0, 0);
     /** @type {Vec2} */
-    prebTranslate;
+    prevTranslate = new Vec2(0, 0);
     /** @type {Number} */
     button = -1;
 
     /**
-     * @param {Boolean} isPressing
-     * @param {Vec2} position
-     * @param {Vec2} prevPosition
-     * @param {Vec2} prevTranslate
      */
-    constructor(isPressing, position, prevPosition, prevTranslate) {
+    constructor() {
+    }
+
+    /**
+     * @param {Boolean} isPressing
+     * @returns {MouseState}
+     */
+    setIsPressing(isPressing) {
         this.isPressing = isPressing;
+        return this;
+    }
+
+    /**
+     * @param {Vec2} position
+     * @returns {MouseState}
+     */
+    setPosition(position) {
         this.position = position;
-        this.orevPosition = prevPosition;
+        return this;
+    }
+
+    /**
+     * @param {Vec2} prevPosition
+     * @returns {MouseState}
+     */
+    setPrevPosition(prevPosition) {
+        this.prevPosition = prevPosition;
+        return this;
+    }
+
+    /**
+     * @param {Vec2} prevTranslate
+     * @returns {MouseState}
+     */
+    setPrevTranslate(prevTranslate) {
         this.prevTranslate = prevTranslate;
+        return this;
+    }
+
+    /**
+     * @param {Number} button
+     * @returns {MouseState}
+     */
+    setButton(button) {
+        this.button = button;
+        return this;
     }
 
     /** @returns {Number} */
