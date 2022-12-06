@@ -5,6 +5,6 @@ window.addEventListener('load', () => {
     const scene = new Scene();
     const canvas = new Canvas('canvas', scene);
     canvas.init();
-
+    canvas.enableDefaultMouseListeners();
     canvas.render();
 });
