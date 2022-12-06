@@ -48,7 +48,7 @@ export default class Point {
      */
     select(mouseState, sceneScale) {
         const mousePos = mouseState.position;
-        const dp = mousePos.sub(this.center);
+        const dp = mousePos.sub(this.p);
         const d = dp.length();
         if (d > this.uiPointRadius * sceneScale) return new SelectionState();
 
