@@ -71,7 +71,7 @@ export default class Scene {
      */
     move(mouseState) {
         if(this.selectionState.isSelectingObj()) {
-            const moved = this.selectionState.selectedObj.move(this.selectionState, mouseState);
+            const moved = this.selectionState.selectedObj.move(mouseState, this.selectionState);
             if(moved) return true;
         }
         return false;

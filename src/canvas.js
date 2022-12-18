@@ -24,6 +24,7 @@ export default class Canvas {
     mouseState = new MouseState();
     /** @type {Scene} */
     scene;
+    /** @type {Array.<WebGLUniformLocation>} */
     uniformLocations = [];
     /**
      * @param {String} canvasId;
@@ -91,9 +92,9 @@ export default class Canvas {
      */
     calcCanvasCoord(mx, my) {
         const rect = this.canvas.getBoundingClientRect();
-        return new Vec2(this.scene.scale * (((mx - rect.left)) /
-                                            this.canvas.height - this.canvasRatio),
-                        this.scene.scale * - (((my - rect.top)) /
+        return new Vec2(this.scene.scale * ((mx - rect.left) /
+                                            this.canvas.height - this.canvasAspectRatio),
+                        this.scene.scale * - ((my - rect.top) /
                                               this.canvas.height - 0.5));
     }
 
@@ -113,16 +114,17 @@ export default class Canvas {
     #onMouseDown(event) {
         event.preventDefault();
         this.canvas.focus();
-        this.mouseState.setPosition(this.calcCanvasCoord(event.clientX, event.clentY));
+        this.mouseState.setPosition(this.calcCanvasCoord(event.clientX, event.clientY))
+            .setButton(event.button)
+            .setIsPressing(true);
 
         if(event.button === MouseState.BUTTON_LEFT) {
             this.scene.select(this.mouseState);
+            console.log(this.scene.selectionState);
             this.render();
         }
 
-        this.mouseState.setButton(event.button)
-            .setPrevTranslate(this.scene.translate)
-            .setIsPressing(true);
+        this.mouseState.setPrevTranslate(this.scene.translate);
     }
 
     #onMouseMove(event) {
