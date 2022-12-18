@@ -43,7 +43,6 @@ export default class Point {
     /**
      * @param {MouseState} mouseState
      * @param {Number} sceneScale
-     * @param {Number} selectionScale
      * @returns {SelectionState}
      */
     select(mouseState, sceneScale) {

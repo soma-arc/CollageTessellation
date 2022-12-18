@@ -2,9 +2,10 @@ import Point from './point.js';
 import Vec2 from './vec2.js';
 import SelectionState from './selectionState.js';
 import MouseState from './mouseState.js';
+import FundamentalDomain from './fundamentalDomain';
 
 export default class Scene {
-    /** @type {Array.<Point>} */
+    /** @type {Array.<FundamentalDomain>} */
     objects = [];
     /** @type {Number} */
     scale = 10.0;
@@ -18,10 +19,10 @@ export default class Scene {
      *
      */
     constructor() {
-        this.objects.push(new Point(new Vec2(0, 0)));
-        this.objects.push(new Point(new Vec2(0, 1)));
-        this.objects.push(new Point(new Vec2(1, 0)));
-        this.objects.push(new Point(new Vec2(1, 1)));
+        this.objects.push(new FundamentalDomain(new Point(new Vec2(0, 0)),
+                                                new Point(new Vec2(0, 1)),
+                                                new Point(new Vec2(1, 1)),
+                                                new Point(new Vec2(1, 0))));
     }
 
     /**
@@ -45,7 +46,7 @@ export default class Scene {
      */
     setUniformValues(gl) {
         for(const obj of this.objects) {
-            obj.setUnifomValues(gl, this.scale);
+            obj.setUniformValues(gl, this.scale);
         }
 
         let index = 0;

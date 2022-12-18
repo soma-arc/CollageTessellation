@@ -8,11 +8,16 @@ struct Point {
     float radius;
 };
 
+struct FundamentalDomain {
+    vec2 leftBottom;
+    vec2 leftTop;
+    vec2 rightTop;
+    vec2 rightBottom;
+    float pointRadius;
+};
+
 uniform vec2 u_resolution;
-uniform Point u_point0;
-uniform Point u_point1;
-uniform Point u_point2;
-uniform Point u_point3;
+uniform FundamentalDomain u_fundamentalDomain0;
 uniform float u_scale;
 uniform vec2 u_translate;
 
@@ -25,10 +30,10 @@ vec4 gammaCorrect(vec4 rgba) {
 }
 
 void render(vec2 p, out vec3 color) {
-    if(distance(p, u_point0.p) < u_point0.radius) color = vec3(1);
-    if(distance(p, u_point1.p) < u_point1.radius) color = vec3(1);
-    if(distance(p, u_point2.p) < u_point2.radius) color = vec3(1);
-    if(distance(p, u_point3.p) < u_point3.radius) color = vec3(1);        
+    if(distance(p, u_fundamentalDomain0.leftBottom) < u_fundamentalDomain0.pointRadius) color = vec3(1);
+    if(distance(p, u_fundamentalDomain0.leftTop) < u_fundamentalDomain0.pointRadius) color = vec3(1);
+    if(distance(p, u_fundamentalDomain0.rightTop) < u_fundamentalDomain0.pointRadius) color = vec3(1);
+    if(distance(p, u_fundamentalDomain0.rightBottom) < u_fundamentalDomain0.pointRadius) color = vec3(1);        
 }
 
 out vec4 outColor;
