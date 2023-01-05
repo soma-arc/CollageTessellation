@@ -26,6 +26,10 @@ export default class FundamentalDomain {
      * @param {Point} rightBottom
      */
     constructor(leftBottom, leftTop, rightTop, rightBottom) {
+        console.log(leftBottom);
+        console.log(leftTop);
+        console.log(rightTop);
+        console.log(rightBottom);
         this.leftBottom = leftBottom;
         this.leftTop = leftTop;
         this.rightTop = rightTop;
@@ -108,19 +112,23 @@ export default class FundamentalDomain {
         const mousePos = mouseState.position;
         switch (selectionState.componentId) {
         case FundamentalDomain.COMPONENT_LEFT_BOTTOM: {
-            this.leftBottom = mousePos.sub(selectionState.diffObj);
+            this.leftBottom.setPosition(mousePos.sub(selectionState.diffObj));
             return true;
         }
         case FundamentalDomain.COMPONENT_LEFT_TOP: {
-            this.leftTop = mousePos.sub(selectionState.diffObj);
+            const v = this.rightTop.p.sub(this.leftTop.p);
+            this.leftTop.setPosition(mousePos.sub(selectionState.diffObj));
+            this.rightTop.setPosition(this.leftTop.p.add(v));
             return true;
         }
         case FundamentalDomain.COMPONENT_RIGHT_TOP: {
-            this.rightTop = mousePos.sub(selectionState.diffObj);
+            const v = this.leftTop.p.sub(this.rightTop.p);
+            this.rightTop.setPosition(mousePos.sub(selectionState.diffObj));
+            this.leftTop.setPosition(this.rightTop.p.add(v));
             return true;
         }
         case FundamentalDomain.COMPONENT_RIGHT_BOTTOM: {
-            this.rightBottom = mousePos.sub(selectionState.diffObj);
+            this.rightBottom.setPosition(mousePos.sub(selectionState.diffObj));
             return true;
         }
         }

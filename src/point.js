@@ -71,6 +71,13 @@ export default class Point {
     }
 
     /**
+     * @param {Vec2} position
+     */
+    setPosition(position) {
+        this.p = position;
+    }
+
+    /**
      * @returns {Number}
      */
     static get COMPONENT_BODY() {
