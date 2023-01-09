@@ -3,6 +3,7 @@ import Vec2 from './vec2.js';
 import SelectionState from './selectionState.js';
 import MouseState from './mouseState.js';
 import FundamentalDomain from './fundamentalDomain';
+import Orbit from './orbit';
 
 export default class Scene {
     /** @type {Array.<FundamentalDomain>} */
@@ -23,6 +24,7 @@ export default class Scene {
                                                 new Point(new Vec2(0, 1)),
                                                 new Point(new Vec2(1, 1)),
                                                 new Point(new Vec2(1, 0))));
+        this.objects.push(new Orbit(new Point(new Vec2(0.5, 0.5))));
     }
 
     /**

@@ -16,10 +16,13 @@ struct FundamentalDomain {
     float pointRadius;
 };
 
+const int NUM_ORBITS = 5;
+
 uniform vec2 u_resolution;
 uniform FundamentalDomain u_fundamentalDomain0;
 uniform float u_scale;
 uniform vec2 u_translate;
+uniform Point u_orbitOrigin;
 
 const float DISPLAY_GAMMA_COEFF = 1. / 2.2;
 vec4 gammaCorrect(vec4 rgba) {
@@ -66,6 +69,16 @@ bool inRect(vec2 p, vec2 leftTop, vec2 rightTop, vec2 rightBottom, vec2 leftBott
 void IIS(vec2 p, out vec3 color) {
     float width = u_fundamentalDomain0.rightTop.x - u_fundamentalDomain0.leftTop.x;
     float height = u_fundamentalDomain0.leftTop.y - u_fundamentalDomain0.leftBottom.y;
+    vec2 v = normalize(u_fundamentalDomain0.leftTop - u_fundamentalDomain0.leftBottom);
+
+    if(inRect(p,
+              u_fundamentalDomain0.leftTop,
+              u_fundamentalDomain0.rightTop - vec2(width / 2.0, 0),
+              (u_fundamentalDomain0.leftTop - u_fundamentalDomain0.leftBottom) * 0.5 + vec2(width / 2.0, 0),
+              (u_fundamentalDomain0.leftTop - u_fundamentalDomain0.leftBottom) * 0.5)){
+        color = vec3(1, 1, 0);
+        return;
+    }
 
     if(inRect(p, u_fundamentalDomain0.leftTop, u_fundamentalDomain0.rightTop, u_fundamentalDomain0.rightBottom, u_fundamentalDomain0.leftBottom))
         {
@@ -73,25 +86,116 @@ void IIS(vec2 p, out vec3 color) {
             return;
         }
 
-    for(int i = 0; i < 1000; i++) {
-        float inv = abs(floor(p.y / height));
-        p.y = mod(p.y, height);
-        float coloringStep = mod(inv, 4.0) + 1.0;
-        vec2 v = normalize(u_fundamentalDomain0.leftTop - u_fundamentalDomain0.leftBottom);
+    bool inFund = true;
+    float inv = 0.;
+    for(int i = 0; i < 10; i++) {
+        inFund = true;
+
+        if(abs(floor(p.y / height)) > 0.){
+            inv += abs(floor(p.y / height));
+            p.y = mod(p.y, height);
+            inFund = false;
+        }
+
         float a = v.y / v.x;
         float x = p.y / a;
-        // 色を横にずらす
-        // float invOffset = mod(inv, 2.0) * (width * 0.5);
-        inv += abs(floor((p.x - x) / width));
+        if(abs(floor((p.x - x) / width)) > 0.){
+            inv += abs(floor((p.x - x) / width));
+            p.x = mod(p.x - x, width) + x;
+            inFund = false;
+        }
 
-        p.x = mod(p.x, width) + x;
+        if(inRect(p,
+                  u_fundamentalDomain0.leftTop,
+                  u_fundamentalDomain0.rightTop - vec2(width / 2.0, 0),
+                  (u_fundamentalDomain0.leftTop - u_fundamentalDomain0.leftBottom) * 0.5 + vec2(width / 2.0, 0),
+                  (u_fundamentalDomain0.leftTop - u_fundamentalDomain0.leftBottom) * 0.5)){
+            inFund = false;
+        }
 
-        if(inRect(p, u_fundamentalDomain0.leftTop, u_fundamentalDomain0.rightTop, u_fundamentalDomain0.rightBottom, u_fundamentalDomain0.leftBottom))
-            {
-                color = computeColor(inv);
-                return;
-            }
+        if(inFund) break;
     }
+    if(inFund)
+        color = computeColor(inv);
+    else
+        color = vec3(0);
+}
+
+vec2[NUM_ORBITS] computeOrbits(vec2 origin) {
+    vec2 orbits[NUM_ORBITS];
+    vec2 p = origin;
+    orbits[0] = origin;
+
+    float width = u_fundamentalDomain0.rightTop.x - u_fundamentalDomain0.leftTop.x;
+    float height = u_fundamentalDomain0.leftTop.y - u_fundamentalDomain0.leftBottom.y;
+    vec2 v = normalize(u_fundamentalDomain0.leftTop - u_fundamentalDomain0.leftBottom);
+    float a = v.y / v.x;
+    bool inFund = true;
+    int orbitIndex = 1;
+    for(int i = 0; i < 10; i++) {
+        inFund = true;
+        if(abs(floor(p.y / height)) > 0.){
+            p.y = mod(p.y, height);
+            orbits[orbitIndex] = p;
+            orbitIndex++;
+            inFund = false;
+        }
+
+        float x = p.y / a;
+        if(abs(floor((p.x - x) / width)) > 0.){
+            p.x = mod(p.x - x, width) + x;
+            orbits[orbitIndex] = p;
+            orbitIndex++;
+            inFund = false;
+        }
+
+        if(inRect(p,
+                  u_fundamentalDomain0.leftTop,
+                  u_fundamentalDomain0.rightTop - vec2(width / 2.0, 0),
+                  (u_fundamentalDomain0.leftTop - u_fundamentalDomain0.leftBottom) * 0.5 + vec2(width / 2.0, 0),
+                  (u_fundamentalDomain0.leftTop - u_fundamentalDomain0.leftBottom) * 0.5)){
+            p = vec2(p.x - width * 0.5, p.y);
+            orbits[orbitIndex] = p;
+            orbitIndex++;
+            //p = p - v * dot(vec2(0, height), v);
+            p = vec2(p.x - height / a, p.y - height);
+            orbits[orbitIndex] = p;
+            orbitIndex++;
+            inFund = false;
+        }
+
+        if(inFund) break;
+    }
+
+    for(int i = orbitIndex; i < NUM_ORBITS; i++) {
+        orbits[i] = p;
+    }
+
+    return orbits;
+}
+
+
+bool renderOrbits(vec2 p, vec2[NUM_ORBITS] orbits, out vec3 color) {
+    for(int i = 0; i < NUM_ORBITS; i++){
+        if(distance(p, orbits[i]) < u_orbitOrigin.radius)  {
+            color = hsv2rgb(0.2 * (float(i)), 1., 1.);
+            return true;
+        }
+        if(i > 0) {
+            vec2 p1 = orbits[i - 1];
+            vec2 p2 = orbits[i];
+            vec2 v = p2 - p1;
+            vec2 n = normalize(vec2(-v.y, v.x));
+            vec2 posP1 = p - p1;
+            vec2 posP2 = p - p2;
+            if(dot(posP1, posP2) < 0. &&
+               abs(dot(n, posP1)) < .01) {
+                color = vec3(0, 1, 1);
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 bool renderUI(vec2 p, out vec3 color) {
@@ -125,7 +229,14 @@ void main() {
     position *= u_scale;
     position += u_translate;
     vec3 color;
+
+    vec2[NUM_ORBITS] orbits = computeOrbits(u_orbitOrigin.p);
+
     bool rendered = renderUI(position, color);
+
+    if(!rendered){
+        rendered = renderOrbits(position, orbits, color);
+    }
 
     if(!rendered) {
         IIS(position, color);
