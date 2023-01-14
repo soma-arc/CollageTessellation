@@ -16,7 +16,7 @@ struct FundamentalDomain {
     float pointRadius;
 };
 
-const int NUM_ORBITS = 5;
+const int NUM_ORBITS = 10;
 
 uniform vec2 u_resolution;
 uniform FundamentalDomain u_fundamentalDomain0;
@@ -40,7 +40,7 @@ vec3 hsv2rgb(float h, float s, float v){
 }
 
 vec3 computeColor(float loopNum) {
-    return hsv2rgb(0.01 + 0.05 * (loopNum -1.), 1., 1.);
+    return hsv2rgb(0.2 * (loopNum), 1., 1.);
 }
 
 bool inRect(vec2 p, vec2 leftTop, vec2 rightTop, vec2 rightBottom, vec2 leftBottom) {
@@ -121,6 +121,78 @@ void IIS(vec2 p, out vec3 color) {
         color = vec3(0);
 }
 
+void IIS2(vec2 p, out vec3 color) {
+    float width = u_fundamentalDomain0.rightTop.x - u_fundamentalDomain0.leftTop.x;
+    float height = u_fundamentalDomain0.leftTop.y - u_fundamentalDomain0.leftBottom.y;
+    vec2 v = normalize(u_fundamentalDomain0.leftTop - u_fundamentalDomain0.leftBottom);
+    vec2 center = (u_fundamentalDomain0.leftTop - u_fundamentalDomain0.leftBottom) * 0.5 + vec2(width / 2.0, 0);
+
+    bool inFund = true;
+    float inv = 0.;
+    for(int i = 0; i < 1000; i++) {
+        inFund = true;
+
+        if(p.x < u_fundamentalDomain0.leftBottom.x) {
+            // 左側
+            // 右下へ
+            p = p + vec2(center.x, -center.y);
+            inv--;
+            inFund = false;
+        } else if (p.x > u_fundamentalDomain0.rightBottom.x) {
+            // 右側
+            // 左上へ
+            p = p + vec2(-center.x, center.y);
+            inv++;
+            inFund = false;
+        } else {
+            // 中央
+            if(p.y < u_fundamentalDomain0.leftBottom.y) {
+                // 下
+                if(p.x < center.x) {
+                    // 左
+                    inv -= abs(floor(p.y / (height * 1.5))) + 1.;
+                    p.y = mod(p.y, (height * 1.5));
+            } else if(p.x > center.x) {
+                    // 右
+                    // 左上へ移動
+                    p = p + vec2(-center.x, center.y);
+                    inv++;
+                }
+                inFund = false;
+            } else if(p.y > u_fundamentalDomain0.leftTop.y) {
+                // 上
+                if(p.x < center.x) {
+                    // 左
+                    // 右下へ移動
+                    p = p + vec2(center.x, -center.y);
+                    inv--;
+                } else if(p.x > center.x) {
+                    // 右
+                    inv += abs(floor((p.y + height * 0.5) / (height * 1.5)));
+                    p.y = mod(p.y + height * 0.5, height * 1.5) - height * 0.5;
+                }
+                inFund = false;
+            } else if(inRect(p,
+                             u_fundamentalDomain0.leftTop,
+                             u_fundamentalDomain0.rightTop - vec2(width / 2.0, 0),
+                             (u_fundamentalDomain0.leftTop - u_fundamentalDomain0.leftBottom) * 0.5 + vec2(width / 2.0, 0),
+                             (u_fundamentalDomain0.leftTop - u_fundamentalDomain0.leftBottom) * 0.5)){
+                // 左上
+                // 右下へ移動させる
+                p = p + vec2(center.x, -center.y);
+                inv--;
+                inFund = false;
+            }
+        }
+
+        if(inFund) break;
+    }
+    if(inFund)
+        color = computeColor(inv);
+    else
+        color = vec3(0);
+}
+
 vec2[NUM_ORBITS] computeOrbits(vec2 origin) {
     vec2 orbits[NUM_ORBITS];
     vec2 p = origin;
@@ -174,11 +246,92 @@ vec2[NUM_ORBITS] computeOrbits(vec2 origin) {
     return orbits;
 }
 
+vec2[NUM_ORBITS] computeOrbits2(vec2 origin) {
+    vec2 orbits[NUM_ORBITS];
+    vec2 p = origin;
+    orbits[0] = origin;
+
+    float width = u_fundamentalDomain0.rightTop.x - u_fundamentalDomain0.leftTop.x;
+    float height = u_fundamentalDomain0.leftTop.y - u_fundamentalDomain0.leftBottom.y;
+    vec2 v = normalize(u_fundamentalDomain0.leftTop - u_fundamentalDomain0.leftBottom);
+    vec2 center = (u_fundamentalDomain0.leftTop - u_fundamentalDomain0.leftBottom) * 0.5 + vec2(width / 2.0, 0);
+    float a = v.y / v.x;
+    bool inFund = true;
+    int orbitIndex = 1;
+
+    for(int i = 0; i < NUM_ORBITS; i++) {
+        inFund = true;
+
+        if(p.x < u_fundamentalDomain0.leftBottom.x) {
+            // 左側
+            // 右下へ
+            p = p + vec2(center.x, -center.y);
+            orbits[orbitIndex] = p;
+            orbitIndex++;
+            inFund = false;
+        } else if (p.x > u_fundamentalDomain0.rightBottom.x) {
+            // 右側
+            // 左上へ
+            p = p + vec2(-center.x, center.y);
+            orbits[orbitIndex] = p;
+            orbitIndex++;
+            inFund = false;
+        } else {
+            // 中央
+            if(p.y < u_fundamentalDomain0.leftBottom.y) {
+                // 下
+                if(p.x < center.x) {
+                    // 左
+                    p.y = mod(p.y, (height * 1.5));
+                } else if(p.x > center.x) {
+                    // 右
+                    // 左上へ移動
+                    p = p + vec2(-center.x, center.y);
+                }
+                orbits[orbitIndex] = p;
+                orbitIndex++;
+                inFund = false;
+            } else if(p.y > u_fundamentalDomain0.leftTop.y) {
+                // 上
+                if(p.x < center.x) {
+                    // 左
+                    // 右下へ移動
+                    p = p + vec2(center.x, -center.y);
+                } else if(p.x > center.x) {
+                    // 右
+                    p.y = mod(p.y + height * 0.5, height * 1.5) - height * 0.5;
+                }
+                orbits[orbitIndex] = p;
+                orbitIndex++;
+                inFund = false;
+            } else if(inRect(p,
+                             u_fundamentalDomain0.leftTop,
+                             u_fundamentalDomain0.rightTop - vec2(width / 2.0, 0),
+                             (u_fundamentalDomain0.leftTop - u_fundamentalDomain0.leftBottom) * 0.5 + vec2(width / 2.0, 0),
+                             (u_fundamentalDomain0.leftTop - u_fundamentalDomain0.leftBottom) * 0.5)){
+                // 左上
+                // 右下へ移動させる
+                p = p + vec2(center.x, -center.y);
+                orbits[orbitIndex] = p;
+                orbitIndex++;
+                inFund = false;
+            }
+        }
+
+        if(inFund) break;
+    }
+
+    for(int i = orbitIndex; i < NUM_ORBITS; i++) {
+        orbits[i] = p;
+    }
+
+    return orbits;
+}
 
 bool renderOrbits(vec2 p, vec2[NUM_ORBITS] orbits, out vec3 color) {
     for(int i = 0; i < NUM_ORBITS; i++){
         if(distance(p, orbits[i]) < u_orbitOrigin.radius)  {
-            color = hsv2rgb(0.2 * (float(i)), 1., 1.);
+            color = hsv2rgb(0.2 * (float(i)) + 0.5, 1., 1.);
             return true;
         }
         if(i > 0) {
@@ -190,7 +343,7 @@ bool renderOrbits(vec2 p, vec2[NUM_ORBITS] orbits, out vec3 color) {
             vec2 posP2 = p - p2;
             if(dot(posP1, posP2) < 0. &&
                abs(dot(n, posP1)) < .01) {
-                color = vec3(0, 1, 1);
+                color = vec3(0);
                 return true;
             }
         }
@@ -230,7 +383,7 @@ void main() {
     position += u_translate;
     vec3 color;
 
-    vec2[NUM_ORBITS] orbits = computeOrbits(u_orbitOrigin.p);
+    vec2[NUM_ORBITS] orbits = computeOrbits2(u_orbitOrigin.p);
 
     bool rendered = renderUI(position, color);
 
@@ -239,7 +392,7 @@ void main() {
     }
 
     if(!rendered) {
-        IIS(position, color);
+        IIS2(position, color);
     }
 
     vec4 c = vec4(color, 1);
