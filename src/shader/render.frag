@@ -24,6 +24,15 @@ uniform float u_scale;
 uniform vec2 u_translate;
 uniform Point u_orbitOrigin;
 
+// from Syntopia http://blog.hvidtfeldts.net/index.php/2015/01/path-tracing-3d-fractals/
+vec2 rand2n(const vec2 co, const float sampleIndex) {
+    vec2 seed = co * (sampleIndex + 1.0);
+    seed+=vec2(-1,1);
+    // implementation based on: lumina.sourceforge.net/Tutorials/Noise.html
+    return vec2(fract(sin(dot(seed.xy ,vec2(12.9898,78.233))) * 43758.5453),
+                fract(cos(dot(seed.xy ,vec2(4.898,7.23))) * 23421.631));
+}
+
 const float DISPLAY_GAMMA_COEFF = 1. / 2.2;
 vec4 gammaCorrect(vec4 rgba) {
     return vec4((min(pow(rgba.r, DISPLAY_GAMMA_COEFF), 1.)),
@@ -132,44 +141,54 @@ void IIS2(vec2 p, out vec3 color) {
     for(int i = 0; i < 1000; i++) {
         inFund = true;
 
-        if(p.x < u_fundamentalDomain0.leftBottom.x) {
+        float a = v.y / v.x;
+        float x = p.y / a;
+        if(p.x < u_fundamentalDomain0.leftBottom.x + x) {
             // 左側
             // 右下へ
-            p = p + vec2(center.x, -center.y);
+            vec2 vv = center - u_fundamentalDomain0.leftTop;
+            p = p + vv;
             inv--;
             inFund = false;
-        } else if (p.x > u_fundamentalDomain0.rightBottom.x) {
+        } else if (p.x > u_fundamentalDomain0.rightBottom.x + x) {
             // 右側
             // 左上へ
-            p = p + vec2(-center.x, center.y);
+            vec2 vv = center - u_fundamentalDomain0.rightBottom;
+            p = p + vv;
             inv++;
             inFund = false;
         } else {
             // 中央
             if(p.y < u_fundamentalDomain0.leftBottom.y) {
                 // 下
-                if(p.x < center.x) {
+                if(p.x < width * 0.5 + x) {
                     // 左
-                    inv -= abs(floor(p.y / (height * 1.5))) + 1.;
-                    p.y = mod(p.y, (height * 1.5));
-            } else if(p.x > center.x) {
+                    float count = abs(floor(p.y / (height * 1.5)));
+                    inv -= count;
+                    float xx = height * 1.5 * count / a;
+                    p = p + vec2(xx, height * 1.5 * count);
+                } else {
                     // 右
                     // 左上へ移動
-                    p = p + vec2(-center.x, center.y);
+                    vec2 vv = center - u_fundamentalDomain0.rightBottom;
+                    p = p + vv;
                     inv++;
                 }
                 inFund = false;
             } else if(p.y > u_fundamentalDomain0.leftTop.y) {
                 // 上
-                if(p.x < center.x) {
+                if(p.x < width * 0.5 + x) {
                     // 左
                     // 右下へ移動
-                    p = p + vec2(center.x, -center.y);
+                    vec2 vv = center - u_fundamentalDomain0.leftTop;
+                    p = p + vv;
                     inv--;
-                } else if(p.x > center.x) {
+                } else {
                     // 右
-                    inv += abs(floor((p.y + height * 0.5) / (height * 1.5)));
-                    p.y = mod(p.y + height * 0.5, height * 1.5) - height * 0.5;
+                    float count = abs(floor((p.y + height * 0.5) / (height * 1.5)));
+                    inv += count;
+                    float xx = height * 1.5 * count / a;
+                    p = p - vec2(xx, height * 1.5 * count);
                 }
                 inFund = false;
             } else if(inRect(p,
@@ -179,7 +198,8 @@ void IIS2(vec2 p, out vec3 color) {
                              (u_fundamentalDomain0.leftTop - u_fundamentalDomain0.leftBottom) * 0.5)){
                 // 左上
                 // 右下へ移動させる
-                p = p + vec2(center.x, -center.y);
+                vec2 vv = center - u_fundamentalDomain0.leftTop;
+                p = p + vv;
                 inv--;
                 inFund = false;
             }
@@ -262,17 +282,20 @@ vec2[NUM_ORBITS] computeOrbits2(vec2 origin) {
     for(int i = 0; i < NUM_ORBITS; i++) {
         inFund = true;
 
-        if(p.x < u_fundamentalDomain0.leftBottom.x) {
+        float x = p.y / a;
+        if(p.x < u_fundamentalDomain0.leftBottom.x + x) {
             // 左側
             // 右下へ
-            p = p + vec2(center.x, -center.y);
+            vec2 vv = center - u_fundamentalDomain0.leftTop;
+            p = p + vv;
             orbits[orbitIndex] = p;
             orbitIndex++;
             inFund = false;
-        } else if (p.x > u_fundamentalDomain0.rightBottom.x) {
+        } else if (p.x > u_fundamentalDomain0.rightBottom.x + x) {
             // 右側
             // 左上へ
-            p = p + vec2(-center.x, center.y);
+            vec2 vv = center - u_fundamentalDomain0.rightBottom;
+            p = p + vv;
             orbits[orbitIndex] = p;
             orbitIndex++;
             inFund = false;
@@ -280,26 +303,32 @@ vec2[NUM_ORBITS] computeOrbits2(vec2 origin) {
             // 中央
             if(p.y < u_fundamentalDomain0.leftBottom.y) {
                 // 下
-                if(p.x < center.x) {
+                if(p.x < width * 0.5 + x) {
                     // 左
-                    p.y = mod(p.y, (height * 1.5));
-                } else if(p.x > center.x) {
+                    float count = abs(floor(p.y / (height * 1.5)));
+                    float xx = height * 1.5 * count / a;
+                    p = p + vec2(xx, height * 1.5 * count);
+                } else {
                     // 右
                     // 左上へ移動
-                    p = p + vec2(-center.x, center.y);
+                    vec2 vv = center - u_fundamentalDomain0.rightBottom;
+                    p = p + vv;
                 }
                 orbits[orbitIndex] = p;
                 orbitIndex++;
                 inFund = false;
             } else if(p.y > u_fundamentalDomain0.leftTop.y) {
                 // 上
-                if(p.x < center.x) {
+                if(p.x < width * 0.5 + x) {
                     // 左
                     // 右下へ移動
-                    p = p + vec2(center.x, -center.y);
-                } else if(p.x > center.x) {
+                    vec2 vv = center - u_fundamentalDomain0.leftTop;
+                    p = p + vv;
+                } else {
                     // 右
-                    p.y = mod(p.y + height * 0.5, height * 1.5) - height * 0.5;
+                    float count = abs(floor((p.y + height * 0.5) / (height * 1.5)));
+                    float xx = height * 1.5 * count / a;
+                    p = p - vec2(xx, height * 1.5 * count);
                 }
                 orbits[orbitIndex] = p;
                 orbitIndex++;
@@ -311,7 +340,8 @@ vec2[NUM_ORBITS] computeOrbits2(vec2 origin) {
                              (u_fundamentalDomain0.leftTop - u_fundamentalDomain0.leftBottom) * 0.5)){
                 // 左上
                 // 右下へ移動させる
-                p = p + vec2(center.x, -center.y);
+                vec2 vv = center - u_fundamentalDomain0.leftTop;
+                p = p + vv;
                 orbits[orbitIndex] = p;
                 orbitIndex++;
                 inFund = false;
@@ -378,23 +408,30 @@ bool renderUI(vec2 p, out vec3 color) {
 out vec4 outColor;
 void main() {
     float ratio = u_resolution.x / u_resolution.y / 2.0;
-    vec2 position = ((gl_FragCoord.xy) / u_resolution.yy ) - vec2(ratio, 0.5);
-    position *= u_scale;
-    position += u_translate;
-    vec3 color;
 
-    vec2[NUM_ORBITS] orbits = computeOrbits2(u_orbitOrigin.p);
+    vec4 sum = vec4(0);
+    const float sampleNum = 10.;
+    for(float i = 0.; i < sampleNum; i++) {
+        vec2 position = ((gl_FragCoord.xy + rand2n(gl_FragCoord.xy, i)) / u_resolution.yy ) - vec2(ratio, 0.5);
+        position *= u_scale;
+        position += u_translate;
+        vec3 color;
 
-    bool rendered = renderUI(position, color);
+        vec2[NUM_ORBITS] orbits = computeOrbits2(u_orbitOrigin.p);
 
-    if(!rendered){
-        rendered = renderOrbits(position, orbits, color);
+        bool rendered = renderUI(position, color);
+
+        if(!rendered){
+            rendered = renderOrbits(position, orbits, color);
+        }
+
+        if(!rendered) {
+            IIS2(position, color);
+        }
+
+        sum += vec4(color, 1.0);
     }
 
-    if(!rendered) {
-        IIS2(position, color);
-    }
-
-    vec4 c = vec4(color, 1);
+    vec4 c = sum / sampleNum;
     outColor = gammaCorrect(c);
 }
