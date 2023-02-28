@@ -11,6 +11,7 @@ export default class Tiles {
         // this.points.push(new Point(new Vec2(0.2, 1)));
         // this.points.push(new Point(new Vec2(0.2, 0.2)));
         // this.points.push(new Point(new Vec2(0, 0.2)));
+        this.maxLevel = 4;
 
         this.points.push(new Point(new Vec2(0, 0)));
         this.points.push(new Point(new Vec2(1, 0)));
@@ -25,8 +26,8 @@ export default class Tiles {
         this.translation2 = new Vec2(1, (1 - intersection.y));
         // 下
         this.translation3 = new Vec2(-intersection.x, -1);
-        
-        
+
+
         this.tiles = [];
         this. originalTile = new Tile(this.points);
         this.translations = [this.translation1, this.translation2, this.translation3,
@@ -40,8 +41,7 @@ export default class Tiles {
         this.tiles = [];
         this.tiles.push([this.originalTile]);
         let level = 0;
-        const maxLevel = 4;
-        for(level = 0; level < maxLevel; level++) {
+        for(level = 0; level < this.maxLevel; level++) {
             this.tiles.push([]);
             for(const tile of this.tiles[level]) {
                 for(let i = 0; i < this.translations.length; i++) {
@@ -54,12 +54,42 @@ export default class Tiles {
         }
     }
 
+    hsvToRgb(H, S, V) {
+        //https://en.wikipedia.org/wiki/HSL_and_HSV#From_HSV
+
+        const C = V * S;
+        const Hp = H / 60;
+        const X = C * (1 - Math.abs(Hp % 2 - 1));
+
+        let R, G, B;
+        if (0 <= Hp && Hp < 1) { [R, G, B] = [C, X, 0]; }
+        if (1 <= Hp && Hp < 2) { [R, G, B] = [X, C, 0]; }
+        if (2 <= Hp && Hp < 3) { [R, G, B] = [0, C, X]; }
+        if (3 <= Hp && Hp < 4) { [R, G, B] = [0, X, C]; }
+        if (4 <= Hp && Hp < 5) { [R, G, B] = [X, 0, C]; }
+        if (5 <= Hp && Hp < 6) { [R, G, B] = [C, 0, X]; }
+
+        const m = V - C;
+        [R, G, B] = [R + m, G + m, B + m];
+
+        R = Math.floor(R * 255);
+        G = Math.floor(G * 255);
+        B = Math.floor(B * 255);
+
+        return [R, G, B];
+    }
+
     render(ctx) {
-        ctx.fillStyle = 'red';
+        let level = 0;
         for(const tileArray of this.tiles) {
+            console.log(this.tiles[level]);
+            const [r, g, b] = this.hsvToRgb(100 * level, 1.0, 1.0);
+            console.log(`rgb(${r},${g},${b})`);
+            ctx.fillStyle = `rgb(${r},${g},${b})`;
             for(const tile of tileArray) {
                 tile.render(ctx);
             }
+            level++;
         }
     }
 }

@@ -8,7 +8,6 @@ export default class Tile {
 
     render(ctx) {
         ctx.strokeStyle = 'black';
-        ctx.fillStyle = 'red';
         ctx.lineWidth = 0.01;
         if(this.points.length < 3) return;
         ctx.beginPath();

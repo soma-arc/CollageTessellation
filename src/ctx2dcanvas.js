@@ -18,6 +18,7 @@ export default class CTX2dCanvas {
         this.canvas.addEventListener('mousedown', this.#onMouseDown.bind(this));
         this.canvas.addEventListener('mousemove', this.#onMouseMove.bind(this));
         this.canvas.addEventListener('mouseup', this.#onMouseUp.bind(this));
+        this.canvas.addEventListener('keydown', this.#onKeyDown.bind(this));
 
         this.scale = 0.1;
         this.translation = new Vec2(0.5, 0.5);
@@ -47,11 +48,11 @@ export default class CTX2dCanvas {
     calcSceneCoord(mx, my) {
         return this.calcCanvasCoord(mx, my);
     }
-    
+
     #onMouseDown(event) {
         event.preventDefault();
         this.canvas.focus();
-        
+
         this.mouseState.setPosition(this.calcSceneCoord(event.clientX, event.clientY))
             .setButton(event.button)
             .setIsPressing(true);
@@ -71,9 +72,11 @@ export default class CTX2dCanvas {
                 const moved = this.rect.move(this.mouseState, this.selectionState);
                 if (moved) {
                     const intersection = Rect.ComputeIntersection(this.originRect, this.rect);
+                    const maxLevel = this.tiles.maxLevel;
                     this.tiles = new Tiles(intersection);
+                    this.tiles.maxLevel = maxLevel;
                     this.tiles.search();
-                    this.render();   
+                    this.render();
                 }
             }
         }
@@ -83,16 +86,29 @@ export default class CTX2dCanvas {
         this.mouseState = new MouseState();
     }
 
+    #onKeyDown(event) {
+        console.log('keydown');
+        if (event.key === '+') {
+            this.tiles.maxLevel++;
+            this.tiles.search();
+            this.render();
+        } else if (event.key === '-') {
+            this.tiles.maxLevel--;
+            this.tiles.search();
+            this.render();
+        }
+    }
+
     render() {
         this.ctx.save();
 
         this.ctx.fillStyle = 'white';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // 左下原点, y+を上にする. 
+        // 左下原点, y+を上にする.
         this.ctx.translate(0, this.canvas.height);
         this.ctx.scale(this.canvas.width, -this.canvas.height);
-        // キャンバスの中心を原点にする. 
+        // キャンバスの中心を原点にする.
         this.ctx.translate(this.translation.x, this.translation.y);
         this.ctx.scale(this.scale, this.scale);
 
@@ -102,7 +118,7 @@ export default class CTX2dCanvas {
 
         // Draw axis
         this.ctx.strokeStyle = 'blue';
-        this.ctx.lineWidth = 0.01;
+        this.ctx.lineWidth = 0.02;
         this.ctx.beginPath();
         this.ctx.moveTo(-100, 0);
         this.ctx.lineTo(100, 0);
@@ -112,14 +128,38 @@ export default class CTX2dCanvas {
         this.ctx.lineTo(0, 100);
         this.ctx.stroke();
 
-        // x = 1
+        this.ctx.setLineDash([0.1, 0.1]);
         this.ctx.strokeStyle = 'blue';
         this.ctx.lineWidth = 0.01;
-        this.ctx.beginPath();
+        // x = 1
         this.ctx.beginPath();
         this.ctx.moveTo(1, -100);
         this.ctx.lineTo(1, 100);
         this.ctx.stroke();
+        // x = 0.5
+        this.ctx.beginPath();
+        this.ctx.moveTo(0.5, -100);
+        this.ctx.lineTo(0.5, 100);
+        this.ctx.stroke();
+        // y = 1
+        this.ctx.beginPath();
+        this.ctx.moveTo(-100, 1);
+        this.ctx.lineTo(100, 1);
+        this.ctx.stroke();
+
+        this.ctx.strokeStyle = 'yellow';
+        // x = 0.25
+        this.ctx.beginPath();
+        this.ctx.moveTo(0.25, -100);
+        this.ctx.lineTo(0.25, 100);
+        this.ctx.stroke();
+        // x = 0.75
+        this.ctx.beginPath();
+        this.ctx.moveTo(0.75, -100);
+        this.ctx.lineTo(0.75, 100);
+        this.ctx.stroke();
+
+        this.ctx.setLineDash([]);
 
         this.ctx.restore();
     }
