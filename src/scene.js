@@ -21,8 +21,8 @@ export default class Scene {
      */
     constructor() {
         this.objects.push(new FundamentalDomain(new Point(new Vec2(0, 0)),
-                                                new Point(new Vec2(0, 1)),
-                                                new Point(new Vec2(1, 1)),
+                                                new Point(new Vec2(0.5, 1)),
+                                                new Point(new Vec2(1.5, 1)),
                                                 new Point(new Vec2(1, 0))));
         this.objects.push(new Orbit(new Point(new Vec2(0.5, 0.5))));
     }
